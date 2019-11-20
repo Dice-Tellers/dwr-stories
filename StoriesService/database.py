@@ -21,7 +21,6 @@ class Story(db.Model):
         super(Story, self).__init__(*args, **kw)
         date_format = "%Y %m %d %H:%M"
         self.date = dt.datetime.strptime(dt.datetime.now().strftime(date_format), date_format)
-        print(self.date)
 
     def to_json(self):
         json = {}

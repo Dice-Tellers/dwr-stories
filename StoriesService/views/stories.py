@@ -10,7 +10,7 @@ from flask import Blueprint, redirect, render_template, request, make_response, 
 from flakon import SwaggerBlueprint
 from flask import session
 from flask_login import (current_user, login_required)
-from sqlalchemy import and_, func
+from sqlalchemy import and_, func, desc
 
 from StoriesService.database import db, Story
 from StoriesService.urls import *
@@ -21,20 +21,14 @@ stories = SwaggerBlueprint('stories', '__name__', swagger_spec=YML)
 
 @stories.operation('getStories')
 def _stories():
-    all_stories = db.session.query(Story).filter_by(is_draft=False).all()
-    print(all_stories)
+    all_stories = db.session.query(Story).order_by(desc(Story.date)).filter_by(is_draft=False).all()
     return jsonify([story.to_json() for story in all_stories])
 
 
 # Gets the last NON-draft story for each registered user
 @stories.operation('getLatestStories')
 def _latest():
-    # listed_stories = db.engine.execute(
-    #     "SELECT * FROM story s1 "
-    #     "WHERE s1.date = (SELECT MAX (s2.date) FROM story s2 WHERE s1.author_id == s2.author_id "
-    #     "AND s2.is_draft == 0) "
-    #     "ORDER BY s1.author_id").fetchall()
-    listed_stories = db.session.query(Story).filter_by(is_draft=False).order_by(func.max(Story.date)).group_by(
+    listed_stories = db.session.query(Story).order_by(desc(Story.date)).filter_by(is_draft=False).order_by(func.max(Story.date)).group_by(
         Story.author_id).all()
     return jsonify([story.to_json() for story in listed_stories])
 
@@ -95,50 +89,10 @@ def _random_story():
 
 
 # Open a story functionality (1.8)
-# TODO: discutere con gli altri se recupero i dati degli utenti qui
 @stories.operation('getStory')
 def _open_story(id_story):
-    # TODO: recuperare dettagli utente
-    # q = db.session.query(Story, User).filter(Story.id == id_story).join(User).first()
     q = db.session.query(Story).filter(Story.id == id_story).all()
-    if q is not None:
-        # TODO: recuperare dettagli reactions
-        # story = q[0]
-        # user = q[1]
-        # #  Splitting the names of figures
-        # rolled_dice = story.figures.split('#')
-        # # Remove the first and last empty strings
-        # rolled_dice = rolled_dice[1:-1]
-        # # Get all the reactions for that story
-        # all_reactions = db.engine.execute(
-        #     "SELECT reaction_caption FROM reaction_catalogue ORDER BY reaction_caption").fetchall()
-        # query = "SELECT reaction_caption, counter FROM counter c, reaction_catalogue r WHERE " \
-        #         "reaction_type_id = reaction_id AND story_id = " + str(id_story) + " ORDER BY reaction_caption "
-        #
-        # story_reactions = db.engine.execute(query).fetchall()
-        # num_story_reactions = Counter.query.filter_by(story_id=id_story).join(ReactionCatalogue).count()
-        # num_reactions = ReactionCatalogue.query.count()
-        #
-        # # Reactions dictionary of tuples (Reaction, Counter)
-        # reactions_list = {}
-        # reactions = list()
-        #
-        # # Generate tuples (reaction, counter)
-        # if num_reactions != 0 and num_story_reactions != 0:
-        #     # Set 0 all counters for all reactions
-        #     for r in all_reactions:
-        #         reactions_list.update({r.reaction_caption: 0})
-        #
-        #     # Update all counter with correct value
-        #     for existing_r in story_reactions:
-        #         reactions_list.update({existing_r.reaction_caption: existing_r.counter})
-        # else:
-        #     for r in all_reactions:
-        #         reactions.append((r.reaction_caption, 0))
-        #
-        # # Convert the dictionary in a list
-        # for key in reactions_list:
-        #     reactions.append((key, reactions_list[key]))
+    if q:
         return jsonify(q[0].to_json())
     else:
         abort(404, 'Specified story not found')
@@ -229,11 +183,12 @@ def _write_story(id_story=None, message='', status=200):
                         db.session.add(new_story)
                         db.session.commit()
                         message = 'Draft has been published'
+                    # TODO: chiamare inizializzaione delle reactions
                     session.pop('figures')
             return make_response(message, 201)
         # If values in request body aren't well-formed
         except ValueError:
-            abort(400, 'ciao')
+            abort(400, 'Wrong URL parameters')
 
 # @stories.route('/stories/delete/<int:id_story>', methods=['POST'])
 # @login_required
