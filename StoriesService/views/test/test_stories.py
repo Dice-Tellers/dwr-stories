@@ -178,6 +178,15 @@ class TestTemplateStories(flask_testing.TestCase):
             {'author_id': 2, 'date': 'Sun, 13 Oct 2019 00:00:00 GMT', 'figures': '#example#abc#', 'id': 3,
              'is_draft': False, 'text': 'You should see this one in /latest'}]
                          )
+    
+    def test_statistics(self):
+        # Test stories statistics
+        # Expected behaviour: return 2 stories, 4 total dice and 2.0 avg dice
+        response = self.client.get('/stories/stats/2')
+        body = json.loads(str(response.data, 'utf8'))
+        all_stories = db.session.query(Story).filter_by(is_draft=False).all()
+        self.assertStatus(response, 200)
+        self.assertEqual(body, {'num_stories': 2, 'tot_num_dice': 4, 'avg_dice': 2.0})
 
     # class TestStories(flask_testing.TestCase):
     #     app = None

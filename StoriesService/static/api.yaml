@@ -131,7 +131,23 @@ paths:
           description: Story doesn't contain all the words or it is too long
         '201':
           description: Draft created / Draft updated / Draft has been published / Story has been published
-
+  /stories/stats/{user_id}:
+    get:
+      summary: Get the statistics for a specific user
+      operationId: getStoriesStatistics
+      consumes:
+        - application/json
+      parameters:
+        - in: path
+          name: user_id
+          description: The user id
+          required: true
+          type: integer
+      responses:
+        '400':
+          description: Errors in requestbody
+        '200':
+          description: Statistics of stories for a given user
 
 definitions:
   story:
