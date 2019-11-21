@@ -27,8 +27,6 @@ class Story(db.Model):
         for attr in ('id', 'text', 'date', 'figures',
                      'author_id', 'is_draft'):
             value = getattr(self, attr)
-            if isinstance(value, db.DateTime):
-                value = value.timestamp()
             json[attr] = value
         return json
 
