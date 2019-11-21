@@ -9,7 +9,7 @@ from StoriesService.database import db, Story
 from StoriesService.urls import *
 
 
-class TestTemplateStories(flask_testing.TestCase):
+class TestStories(flask_testing.TestCase):
     app = None
 
     # First thing called
@@ -179,284 +179,166 @@ class TestTemplateStories(flask_testing.TestCase):
              'is_draft': False, 'text': 'You should see this one in /latest'}]
                          )
 
-    # class TestStories(flask_testing.TestCase):
-    #     app = None
-    #
-    #     # First thing called
-    #     def create_app(self):
-    #         global app
-    #         app = create_app(database=TEST_DB)
-    #         return app
-    #
-    #     # Set up database for testing here
-    #     def setUp(self) -> None:
-    #         with app.app_context():
-    #             # Create admin user (if not present)
-    #             q = db.session.query(User).filter(User.email == 'example@example.com')
-    #             user = q.first()
-    #             if user is None:
-    #                 example = User()
-    #                 example.firstname = 'Admin'
-    #                 example.lastname = 'Admin'
-    #                 example.email = 'example@example.com'
-    #                 example.dateofbirth = datetime.datetime(2020, 10, 5)
-    #                 example.is_admin = True
-    #                 example.set_password('admin')
-    #                 db.session.add(example)
-    #                 db.session.commit()
-    #
-    #             # Create non admin user (if not present)
-    #             q = db.session.query(User).filter(User.email == 'abc@abc.com')
-    #             user = q.first()
-    #             if user is None:
-    #                 example = User()
-    #                 example.firstname = 'Abc'
-    #                 example.lastname = 'Abc'
-    #                 example.email = 'abc@abc.com'
-    #                 example.dateofbirth = datetime.datetime(2010, 10, 5)
-    #                 example.is_admin = False
-    #                 example.set_password('abc')
-    #                 db.session.add(example)
-    #                 db.session.commit()
-    #
-    #             # Create the first story, default from teacher's code
-    #             q = db.session.query(Story).filter(Story.id == 1)
-    #             story = q.first()
-    #             if story is None:
-    #                 example = Story()
-    #                 example.text = 'Trial story of example admin user :)'
-    #                 example.author_id = 1
-    #                 example.figures = '#example#admin#'
-    #                 example.is_draft = False
-    #                 db.session.add(example)
-    #                 db.session.commit()
-    #
-    #             # Create a story of a different user
-    #             q = db.session.query(Story).filter(Story.id == 2)
-    #             story = q.first()
-    #             if story is None:
-    #                 example = Story()
-    #                 example.text = 'You won\'t modify this story'
-    #                 example.author_id = 2
-    #                 example.figures = '#modify#story#'
-    #                 example.is_draft = False
-    #                 db.session.add(example)
-    #                 db.session.commit()
-    #
-    #             # Create a draft for the logged user
-    #             q = db.session.query(Story).filter(Story.id == 3)
-    #             story = q.first()
-    #             if story is None:
-    #                 example = Story()
-    #                 example.text = 'This is an example of draft'
-    #                 example.author_id = 1
-    #                 example.figures = '#example#draft#'
-    #                 example.is_draft = True
-    #                 db.session.add(example)
-    #                 db.session.commit()
-    #
-    #             # Create a draft of a different user
-    #             q = db.session.query(Story).filter(Story.id == 4)
-    #             story = q.first()
-    #             if story is None:
-    #                 example = Story()
-    #                 example.text = 'This is an example of draft that you can\'t modify'
-    #                 example.date = datetime.datetime.strptime('2018-12-30', '%Y-%m-%d')
-    #                 example.author_id = 2
-    #                 example.figures = '#example#draft#'
-    #                 example.is_draft = True
-    #                 db.session.add(example)
-    #                 db.session.commit()
-    #
-    #             payload = {'email': 'example@example.com', 'password': 'admin'}
-    #
-    #             form = LoginForm(data=payload)
-    #
-    #             self.client.post('/users/login', data=form.data, follow_redirects=True)
-    #
-    #     # Executed at end of each test
-    #     def tearDown(self) -> None:
-    #         db.session.remove()
-    #         db.drop_all()
-    #
-    #     def test_write_story(self):
-    #
-    #         # Testing writing without rolling dice
-    #         response = self.client.get(WRITE_URL)
-    #         self.assert_redirects(response, HOME_URL)
-    #         self.client.get(WRITE_URL, follow_redirects=False)
-    #         self.assert_template_used('index.html')
-    #
-    #         # Testing writing of a valid draft story
-    #         response = self.client.get(WRITE_URL + '/3')
-    #         self.assert200(response)
-    #         self.assert_template_used('write_story.html')
-    #         self.assert_context('words', ['example', 'draft'])
-    #
-    #         # Testing writing of other user's draft
-    #         response = self.client.get(WRITE_URL + '/4')
-    #         self.assert_redirects(response, 'http://127.0.0.1:5000/users/1/drafts')
-    #
-    #         # Testing writing of an already published story
-    #         response = self.client.get(WRITE_URL + '/1')
-    #         self.assert_redirects(response, 'http://127.0.0.1:5000/users/1/drafts')
-    #
-    #         # Testing writing of a new story with valid session
-    #         with self.client.session_transaction() as session:
-    #             session['figures'] = ['beer', 'cat', 'dog']
-    #         response = self.client.get(WRITE_URL)
-    #         self.assert200(response)
-    #         self.assert_template_used('write_story.html')
-    #         self.assert_context('words', ['beer', 'cat', 'dog'])
-    #
-    #         # Testing publishing invalid story
-    #         payload = {'text': 'my cat is drinking a gin tonic with my neighbour\'s dog', 'as_draft': '0'}
-    #         form = StoryForm(data=payload)
-    #         response = self.client.post('/stories/new/write', data=form.data)
-    #         self.assert400(response)
-    #         self.assert_template_used('write_story.html')
-    #         self.assert_context('message', 'Your story doesn\'t contain all the words. Missing: beer ')
-    #
-    #         # Testing publishing valid story
-    #         payload1 = {'text': 'my cat is drinking a beer with my neighbour\'s dog', 'as_draft': '0'}
-    #         form1 = StoryForm(data=payload1)
-    #         response = self.client.post('/stories/new/write', data=form1.data)
-    #         self.assertEqual(response.status_code, 302)
-    #         self.assert_redirects(response, '/users/1/stories')
-    #
-    #         # Testing saving a new story as draft
-    #         with self.client.session_transaction() as session:
-    #             session['figures'] = ['beer', 'cat', 'dog']
-    #         payload2 = {'text': 'my cat is drinking', 'as_draft': '1'}
-    #         form2 = StoryForm(data=payload2)
-    #         response = self.client.post('/stories/new/write', data=form2.data)
-    #         self.assertEqual(response.status_code, 302)
-    #         self.assert_redirects(response, '/users/1/drafts')
-    #
-    #         # Testing saving a draft again
-    #         with self.client.session_transaction() as session:
-    #             session['figures'] = ['beer', 'cat', 'dog']
-    #             session['id_story'] = 6
-    #         response = self.client.post('/stories/new/write', data=form2.data)
-    #         self.assertEqual(response.status_code, 302)
-    #         self.assert_redirects(response, '/users/1/drafts')
-    #         q = db.session.query(Story).filter(Story.id == 7).first()
-    #         self.assertEqual(q, None)
-    #
-    #         # Testing publishing a draft story
-    #         with self.client.session_transaction() as session:
-    #             session['figures'] = ['beer', 'cat', 'dog']
-    #             session['id_story'] = 6
-    #         payload3 = {'text': 'my cat is drinking dog and beer', 'as_draft': '0'}
-    #         form3 = StoryForm(data=payload3)
-    #         response = self.client.post('/stories/new/write', data=form3.data)
-    #         self.assertEqual(response.status_code, 302)
-    #         self.assert_redirects(response, '/users/1/stories')
-    #         q = db.session.query(Story).filter(Story.id == 7).first()
-    #         self.assertEqual(q, None)
-    #         q = db.session.query(Story).filter(Story.id == 6).first()
-    #         self.assertEqual(q.is_draft, False)
-    #
-    #
-    # class TestRandomRecentStory(flask_testing.TestCase):
-    #     app = None
-    #
-    #     # First thing called
-    #     def create_app(self):
-    #         global app
-    #         app = create_app(database=TEST_DB)
-    #         return app
-    #
-    #     # Set up database for testing here
-    #     def setUp(self) -> None:
-    #         with app.app_context():
-    #
-    #             # Create an user with no stories
-    #             q = db.session.query(User).filter(User.email == 'example@example.com')
-    #             user = q.first()
-    #             if user is None:
-    #                 example = User()
-    #                 example.firstname = 'Admin'
-    #                 example.lastname = 'Admin'
-    #                 example.email = 'example@example.com'
-    #                 example.dateofbirth = datetime.datetime(2020, 10, 5)
-    #                 example.is_admin = True
-    #                 example.set_password('admin')
-    #                 db.session.add(example)
-    #                 db.session.commit()
-    #
-    #             # Create another user
-    #             q = db.session.query(User).filter(User.email == 'example2@example.com')
-    #             user = q.first()
-    #             if user is None:
-    #                 example = User()
-    #                 example.firstname = 'Admin2'
-    #                 example.lastname = 'Admin2'
-    #                 example.email = 'example2@example.com'
-    #                 example.dateofbirth = datetime.datetime(2020, 10, 5)
-    #                 example.is_admin = True
-    #                 example.set_password('admin')
-    #                 db.session.add(example)
-    #                 db.session.commit()
-    #
-    #             # Create a not recent story by Admin2
-    #             example = Story()
-    #             example.text = 'This is a story about the end of the world'
-    #             example.date = datetime.datetime.strptime('2012-12-12', '%Y-%m-%d')
-    #             example.author_id = 2
-    #             example.figures = 'story#world'
-    #             example.is_draft = False
-    #             db.session.add(example)
-    #             db.session.commit()
-    #
-    #             # Create a recent story saved as draft by Admin2
-    #             example = Story()
-    #             example.text = 'This story is just a draft'
-    #             example.date = datetime.datetime.now()
-    #             example.author_id = 2
-    #             example.figures = 'story#draft'
-    #             example.is_draft = True
-    #             db.session.add(example)
-    #             db.session.commit()
-    #
-    #             # Create a recent story by Admin
-    #             example = Story()
-    #             example.text = 'Just another story'
-    #             example.date = datetime.datetime.now()
-    #             example.author_id = 1
-    #             example.figures = 'dice#example'
-    #             example.is_draft = False
-    #             db.session.add(example)
-    #             db.session.commit()
-    #
-    #     def test_random_recent_story(self):
-    #
-    #         # Random recent story as anonymous user
-    #         self.client.get('/stories/random', follow_redirects=True)
-    #         self.assert_template_used('story.html')
-    #         self.assertEqual(self.get_context_variable('story').text, 'Just another story')
-    #
-    #         # Login as Admin
-    #         payload = {'email': 'example@example.com', 'password': 'admin'}
-    #         form = LoginForm(data=payload)
-    #         self.client.post('/users/login', data=form.data, follow_redirects=True)
-    #
-    #         # No recent stories
-    #         self.client.get('/stories/random', follow_redirects=True)
-    #         self.assert_template_used('stories.html')
-    #         self.assert_message_flashed('Oops, there are no recent stories by other users!')
-    #
-    #         # Create a new recent story by Admin2
-    #         example = Story()
-    #         example.text = 'This is a valid recent story'
-    #         example.date = datetime.datetime.now()
-    #         example.author_id = 2
-    #         example.figures = 'story#recent'
-    #         example.is_draft = False
-    #         db.session.add(example)
-    #         db.session.commit()
-    #
-    #         # Get the only recent story not written by Admin
-    #         response = self.client.get('/stories/random', follow_redirects=True)
-    #         self.assert_template_used('story.html')
-    #         self.assertEqual(self.get_context_variable('story').text, 'This is a valid recent story')
+    def test_get_draft(self):
+        # Testing writing of a valid draft story
+        response = self.client.get('/stories/new/write/4?user_id=3')
+        self.assertStatus(response, 200)
+        self.assertEqual(response.data.decode('utf8'), 'Session  to continue writing a draft OK')
+
+        # Testing writing of other user's draft
+        response = self.client.get('/stories/new/write/4?user_id=2')
+        body = json.loads(str(response.data, 'utf8'))
+        self.assertStatus(response, 400)
+        self.assertEqual(body['description'],
+                         'Request is invalid, check if you are the author of the story and it is still a draft')
+
+        # Testing writing of an already published story
+        response = self.client.get('/stories/new/write/3?user_id=3')
+        body = json.loads(str(response.data, 'utf8'))
+        self.assertStatus(response, 400)
+        self.assertEqual(body['description'],
+                         'Request is invalid, check if you are the author of the story and it is still a draft')
+
+    def test_write_story(self):
+        # Testing invalid request
+        payload = {'text': 'my cat is drinking a gin tonic with my neighbour\'s dog', 'as_draft': 'a', 'user': 'b'}
+        response = self.client.post('/stories/new/write', data=json.dumps(payload), content_type='application/json')
+        body = json.loads(str(response.data, 'utf8'))
+        self.assertStatus(response, 400)
+        self.assertEqual(body['description'], 'Wrong parameters')
+
+        # Testing publishing invalid story
+        with self.client.session_transaction() as session:
+            session.clear()
+            session['figures'] = ['beer', 'cat', 'dog']
+        payload = {'text': 'my cat is drinking a gin tonic with my neighbour\'s dog', 'as_draft': False, 'user_id': '1'}
+        response = self.client.post('/stories/new/write', data=json.dumps(payload), content_type='application/json')
+        body = json.loads(str(response.data, 'utf8'))
+        self.assertStatus(response, 422)
+        self.assertEqual(body['description'], 'Your story doesn\'t contain all the words. Missing: beer ')
+
+        # Testing publishing valid story
+        payload = {'text': 'my cat is drinking a beer with my neighbour\'s dog', 'as_draft': False, 'user_id': '1'}
+        response = self.client.post('/stories/new/write', data=json.dumps(payload), content_type='application/json')
+        self.assertStatus(response, 201)
+        self.assertEqual(response.data.decode('utf8'), 'New story has been published')
+
+        # Testing saving a new story as draft
+        with self.client.session_transaction() as session:
+            session.clear()
+            session['figures'] = ['beer', 'cat', 'dog']
+        payload2 = {'text': 'my cat is drinking', 'as_draft': True, 'user_id': '1'}
+        response = self.client.post('/stories/new/write', data=json.dumps(payload2), content_type='application/json')
+        self.assertStatus(response, 201)
+        self.assertEqual(response.data.decode('utf8'), 'Draft created')
+
+        # Testing saving a draft again
+        count = db.session.query(Story).count()
+        with self.client.session_transaction() as session:
+            session['figures'] = ['beer', 'cat', 'dog']
+            session['id_story'] = 6
+        response = self.client.post('/stories/new/write', data=json.dumps(payload2), content_type='application/json')
+        self.assertStatus(response, 200)
+        self.assertEqual(response.data.decode('utf8'), 'Draft updated')
+        # No items added
+        q = db.session.query(Story).filter(Story.id == count + 1).first()
+        self.assertEqual(q, None)
+
+        # Testing publishing a draft story
+        with self.client.session_transaction() as session:
+            session['figures'] = ['beer', 'cat', 'dog']
+            session['id_story'] = 6
+        payload3 = {'text': 'my cat is drinking dog and beer', 'as_draft': False, 'user_id': '1'}
+        response = self.client.post('/stories/new/write', data=json.dumps(payload3), content_type='application/json')
+        self.assertStatus(response, 201)
+        self.assertEqual(response.data.decode('utf8'), 'Draft has been published')
+        q = db.session.query(Story).filter(Story.id == count + 1).first()
+        self.assertEqual(q, None)
+        q = db.session.query(Story).filter(Story.id == 6).first()
+        self.assertEqual(q.is_draft, False)
+
+    def test_delete_story(self):
+        # Deleting the story of another user
+        response = self.client.post('/stories/delete/1?user_id=2')
+        body = json.loads(str(response.data, 'utf8'))
+        self.assertStatus(response, 400)
+        self.assertEqual(body['description'],
+                         'Request is invalid, check if you are the author of the story and the id is a valid one')
+
+        # Deleting your story
+        response = self.client.post('/stories/delete/1?user_id=1')
+        self.assertStatus(response, 200)
+        self.assertEqual(response.data.decode('utf8'),
+                         'Story has been deleted')
+
+
+class TestRandomRecentStory(flask_testing.TestCase):
+    app = None
+
+    # First thing called
+    def create_app(self):
+        global app
+        app = create_app(database=TEST_DB)
+        return app
+
+    # Set up database for testing here
+    def setUp(self) -> None:
+        with app.app_context():
+            # Create a not recent story by Admin2
+            example = Story()
+            example.text = 'This is a story about the end of the world'
+            example.date = datetime.datetime.strptime('2012-12-12', '%Y-%m-%d')
+            example.author_id = 2
+            example.figures = '#story#world#'
+            example.is_draft = False
+            db.session.add(example)
+            db.session.commit()
+
+            # Create a recent story saved as draft by Admin2
+            example = Story()
+            example.text = 'This story is just a draft'
+            example.date = datetime.datetime.now()
+            example.author_id = 2
+            example.figures = '#story#draft#'
+            example.is_draft = True
+            db.session.add(example)
+            db.session.commit()
+
+            # Create a recent story by Admin
+            example = Story()
+            example.text = 'Just another story'
+            example.date = datetime.datetime.now()
+            example.author_id = 1
+            example.figures = '#dice#example#'
+            example.is_draft = False
+            db.session.add(example)
+            db.session.commit()
+
+    def test_random_recent_story(self):
+        # Random recent story as anonymous user
+        response = self.client.get('/stories/random')
+        body = json.loads(str(response.data, 'utf8'))
+        self.assertStatus(response, 200)
+        self.assertEqual(body['text'], 'Just another story')
+
+        # No recent stories
+        response = self.client.get('/stories/random?user_id=1')
+        body = json.loads(str(response.data, 'utf8'))
+        self.assertStatus(response, 404)
+        self.assertEqual(body['description'], 'There are no recent stories by other users')
+
+        # Create a new recent story by Admin2
+        example = Story()
+        example.text = 'This is a valid recent story'
+        example.date = datetime.datetime.now()
+        example.author_id = 2
+        example.figures = 'story#recent'
+        example.is_draft = False
+        db.session.add(example)
+        db.session.commit()
+
+        # Get the only recent story not written by Admin
+        response = self.client.get('/stories/random?user_id=1')
+        body = json.loads(str(response.data, 'utf8'))
+        self.assertStatus(response, 200)
+        self.assertEqual(body['text'], 'This is a valid recent story')
