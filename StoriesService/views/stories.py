@@ -190,6 +190,45 @@ def _write_story(id_story=None, message='', status=200):
         except (ValueError, KeyError):
             abort(400, 'Wrong parameters')
 
+@stories.operation('getStoriesStatistics')
+def _stories_stats(user_id):
+    all_stories = Story.query.filter(Story.author_id==user_id).all()
+    num_stories = len(all_stories)
+    tot_num_dice = 0
+    avg_dice = 0.0
+
+    for story in all_stories:
+        rolled_dice = story.figures.split('#')
+        rolled_dice = rolled_dice[1:-1]
+        tot_num_dice += len(rolled_dice)
+
+    if num_stories is not 0:
+        avg_dice = round(tot_num_dice / num_stories, 2)
+
+    result = {
+        'num_stories': num_stories,
+        'tot_num_dice': tot_num_dice,
+        'avg_dice': avg_dice
+    }
+
+    return jsonify(result)
+
+
+# @stories.route('/stories/delete/<int:id_story>', methods=['POST'])
+# @login_required
+# def _manage_stories(id_story):
+#     story_to_delete = Story.query.filter(Story.id == id_story)
+#     if story_to_delete.first().author_id != current_user.id:
+#         flash("Cannot delete other user's story", 'error')
+#     else:
+#
+#         Reaction.query.filter(Reaction.story_id == id_story).delete()
+#         Counter.query.filter(Counter.story_id == id_story).delete()
+#         story_to_delete.delete()
+#         db.session.commit()
+#
+#     return redirect(url_for("home.index"))
+
 @stories.operation('deleteStory')
 def _manage_stories(id_story):
     user_id = request.args.get('user_id')
