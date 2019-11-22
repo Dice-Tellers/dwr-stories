@@ -243,3 +243,27 @@ def _manage_stories(id_story):
         db.session.commit()
 
     return make_response('Story has been deleted')
+
+# Return the result of the search in the story list
+@stories.operation('search')
+def _search():
+    try:
+        query = request.args.get('query')
+
+        if query is None:
+            abort(400, 'Error with one parameters')
+        else:
+            query = query.strip()
+
+        stories = []
+
+        if query != '':
+            stories = Story.query.filter(and_(Story.figures.like('%#' + query + '#%'), Story.is_draft==False)).all()
+
+        if len(stories) > 0:    
+            return jsonify([story.to_json() for story in stories])
+        else:
+            return jsonify({}), 204 
+    # If values in request body aren't well-formed
+    except ValueError:
+        abort(400, 'Error with one parameters') 
