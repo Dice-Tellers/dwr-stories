@@ -21,8 +21,62 @@ stories = SwaggerBlueprint('stories', '__name__', swagger_spec=YML)
 
 @stories.operation('getStories')
 def _stories():
-    all_stories = db.session.query(Story).order_by(desc(Story.date)).filter_by(is_draft=False).all()
-    return jsonify([story.to_json() for story in all_stories])
+    if 'GET' == request.method:
+        all_stories = db.session.query(Story).order_by(desc(Story.date)).filter_by(is_draft=False).all()
+        return jsonify([story.to_json() for story in all_stories])
+
+@stories.operation('writeStory')
+def _write_story(message='', status=200):
+    if 'POST' == request.method:
+        requestj = request.get_json(request)
+        try:
+            text = requestj['text']
+            figures = requestj['figures']
+            draft = requestj['as_draft']
+            user_id = requestj['user_id']
+            if draft:
+                # Save new story as draft
+                new_story = Story()
+                new_story.author_id = user_id
+                new_story.figures = figures
+                new_story.is_draft = True
+                new_story.text = text
+                db.session.add(new_story)
+                db.session.commit()
+                status = 201
+                message = 'Draft created'
+            else:
+                # Check validity
+                dice_figures = figures.split('#')[1:-1]
+                trans = str.maketrans(string.punctuation, ' ' * len(string.punctuation))
+                new_s = text.translate(trans).lower()
+                story_words = new_s.split()
+                for w in story_words:
+                    if w in dice_figures:
+                        dice_figures.remove(w)
+                        if not dice_figures:
+                            break
+                if len(dice_figures) > 0:
+                    message = 'Your story doesn\'t contain all the words. Missing: '
+                    for w in dice_figures:
+                        message += w + ' '
+                    abort(422, message)
+                else:
+                    # Publish a new story
+                    new_story = Story()
+                    new_story.author_id = user_id
+                    new_story.figures = figures
+                    new_story.is_draft = False
+                    new_story.text = text
+                    db.session.add(new_story)
+                    db.session.commit()
+                    status = 201
+                    message = 'New story has been published'
+                    # TODO: chiamare inizializzaione delle reactions
+            return make_response(message, status)
+        # If values in request body aren't well-formed
+        except (ValueError, KeyError):
+            abort(400, 'Wrong parameters')
 
 
 # Gets the last NON-draft story for each registered user
@@ -97,98 +151,55 @@ def _open_story(id_story):
     else:
         abort(404, 'Specified story not found')
 
-
-# Get the form to write a new story or continue a draft
-# Publish the story or save as draft
-@stories.operation('writeDraft')
-def _get_draft(id_story=None):
-    # Setting session to modify draft
-    if 'GET' == request.method and id_story is not None:
-        user_id = request.args.get('user_id')
-        story = Story.query.filter(Story.id == id_story).first()
-        if user_id and user_id.isdigit() and story is not None and story.author_id == int(user_id) and story.is_draft:
-            session['figures'] = story.figures.split('#')
-            session['figures'] = session['figures'][1:-1]
-            session['id_story'] = story.id
-            return make_response('Session  to continue writing a draft OK')
-        else:
-            abort(400, 'Request is invalid, check if you are the author of the story and it is still a draft')
-
-
-@stories.operation('writeStory')
-def _write_story(id_story=None, message='', status=200):
-    if 'POST' == request.method:
+@stories.operation('updateDraft')
+def _update_draft(id_story):
+    if 'PUT' == request.method:
         requestj = request.get_json(request)
         try:
             text = requestj['text']
             draft = requestj['as_draft']
-            user_id = requestj['user_id']
-            if draft:
-                if 'id_story' in session:
-                    # Update a draft
-                    date_format = "%Y %m %d %H:%M"
-                    date = datetime.datetime.strptime(datetime.datetime.now().strftime(date_format), date_format)
-                    db.session.query(Story).filter_by(id=session['id_story']).update({'text': text,                                                                 'date': date})
-                    db.session.commit()
-                    session.pop('id_story')
-                    status = 200
-                    message = 'Draft updated'
-                else:
-                    # Save new story as draft
-                    new_story = Story()
-                    new_story.author_id = user_id
-                    new_story.figures = '#' + '#'.join(session['figures']) + '#'
-                    new_story.is_draft = True
-                    new_story.text = text
-                    db.session.add(new_story)
-                    db.session.commit()
-                    status = 201
-                    message = 'Draft created'
-                session.pop('figures')
-            else:
-                # Check validity
-                dice_figures = session['figures'].copy()
-                trans = str.maketrans(string.punctuation, ' ' * len(string.punctuation))
-                new_s = text.translate(trans).lower()
-                story_words = new_s.split()
-                for w in story_words:
-                    if w in dice_figures:
-                        dice_figures.remove(w)
-                        if not dice_figures:
-                            break
-                if len(dice_figures) > 0:
-                    message = 'Your story doesn\'t contain all the words. Missing: '
-                    for w in dice_figures:
-                        message += w + ' '
-                    abort(422, message)
-                else:
-                    if 'id_story' in session:
-                        # Publish a draft
-                        date_format = "%Y %m %d %H:%M"
-                        date = datetime.datetime.strptime(datetime.datetime.now().strftime(date_format), date_format)
-                        db.session.query(Story).filter_by(id=session['id_story']).update(
-                            {'text': text, 'date': date, 'is_draft': False})
-                        db.session.commit()
-                        session.pop('id_story')
-                        status = 201
-                        message = 'Draft has been published'
-                    else:
-                        # Publish a new story
-                        new_story = Story()
-                        new_story.author_id = user_id
-                        new_story.figures = '#' + '#'.join(session['figures']) + '#'
-                        new_story.is_draft = False
-                        new_story.text = text
-                        db.session.add(new_story)
-                        db.session.commit()
-                        status = 201
-                        message = 'New story has been published'
-                    # TODO: chiamare inizializzaione delle reactions
-                    session.pop('figures')
+
+            # Update a draft
+            date_format = "%Y %m %d %H:%M"
+            date = datetime.datetime.strptime(datetime.datetime.now().strftime(date_format), date_format)
+            db.session.query(Story).filter_by(id=id_story).update({'text': text, 'date': date, 'draft': bool(draft)})
+            db.session.commit()
+            session.pop('id_story')
+            status = 200
+            message = 'Draft updated'
             return make_response(message, status)
-        # If values in request body aren't well-formed
         except (ValueError, KeyError):
-            abort(400, 'Wrong parameters')
+            abort(400, 'Errors in requestbody')
+
+
+
+@stories.operation('getDrafts')
+def _user_drafts():
+    user_id = request.args.get('user_id')
+    if user_id and user_id.isdigit:
+        drafts = Story.query.filter_by(author_id=int(user_id), is_draft=True).all()
+        if len(drafts) == 0:
+            abort(404, 'There are no recent drafts by this user')
+        else:
+            return jsonify([draft.to_json() for draft in drafts])
+    else:
+        abort(400, 'Invalid parameters')
+
+
+
+# # Get the form to write a new story or continue a draft
+# # Publish the story or save as draft
+# @stories.operation('getDraft')
+# def _get_draft(id_story=None):
+#     # Setting session to modify draft
+#     if 'GET' == request.method and id_story is not None:
+#         user_id = request.args.get('user_id')
+#         story = Story.query.filter(Story.id == id_story).first()
+#         if user_id and user_id.isdigit() and story is not None and story.author_id == int(user_id) and story.is_draft:
+#             return jsonify(story.to_json())
+#         else:
+#             abort(400, 'Request is invalid, check if you are the author of the story and it is still a draft')
+
 
 @stories.operation('getStoriesStatistics')
 def _stories_stats(user_id):
@@ -213,27 +224,11 @@ def _stories_stats(user_id):
 
     return jsonify(result)
 
-
-# @stories.route('/stories/delete/<int:id_story>', methods=['POST'])
-# @login_required
-# def _manage_stories(id_story):
-#     story_to_delete = Story.query.filter(Story.id == id_story)
-#     if story_to_delete.first().author_id != current_user.id:
-#         flash("Cannot delete other user's story", 'error')
-#     else:
-#
-#         Reaction.query.filter(Reaction.story_id == id_story).delete()
-#         Counter.query.filter(Counter.story_id == id_story).delete()
-#         story_to_delete.delete()
-#         db.session.commit()
-#
-#     return redirect(url_for("home.index"))
-
 @stories.operation('deleteStory')
 def _manage_stories(id_story):
-    user_id = request.args.get('user_id')
+    req = request.get_json(request)
     story_to_delete = Story.query.filter(Story.id == id_story)
-    if not user_id or not user_id.isdigit() or story_to_delete.first().author_id != int(user_id):
+    if not req['user_id'] or not req['user_id'].isdigit() or story_to_delete.first().author_id != int(req['user_id']):
         abort(400, 'Request is invalid, check if you are the author of the story and the id is a valid one')
     else:
         # TODO : cancellare reactions and counters relativi
