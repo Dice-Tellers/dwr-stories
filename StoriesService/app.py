@@ -23,52 +23,52 @@ def create_app(database=DEFAULT_DB, wtf=False, login_disabled=False):
 
     db.init_app(flask_app)
     db.create_all(app=flask_app)
-    with flask_app.app_context():
-        q = db.session.query(Story).filter(Story.id == 1)
-        story = q.first()
-        if story is None:
-            example = Story()
-            example.text = 'Trial story of example admin user :)'
-            example.figures = '#example#'
-            example.author_id = 1
-            example.is_draft = True
-            print(example)
-            db.session.add(example)
-            db.session.commit()
-        q = db.session.query(Story).filter(Story.id == 2)
-        story = q.first()
-        if story is None:
-            example = Story()
-            example.text = 'Trial story of example admin user :)'
-            example.figures = '#story#'
-            example.author_id = 3
-            example.is_draft = False
-            print(example)
-            db.session.add(example)
-            db.session.commit()
-        q = db.session.query(Story).filter(Story.id == 3)
-        story = q.first()
-        if story is None:
-            example = Story()
-            example.text = 'Trial story of example admin user :)'
-            example.figures = '#trial#'
-            example.author_id = 3
-            example.is_draft = False
-            print(example)
-            db.session.add(example)
-            db.session.commit()
-        q = db.session.query(Story).filter(Story.id == 4)
-        story = q.first()
-        if story is None:
-            example = Story()
-            example.text = 'Trial story of example admin user :)'
-            example.figures = '#user#'
-            example.author_id = 3
-            example.is_draft = False
-            example.date = datetime.datetime.strptime('2019-10-20', '%Y-%m-%d')
-            print(example)
-            db.session.add(example)
-            db.session.commit()
+    # with flask_app.app_context():
+    #     q = db.session.query(Story).filter(Story.id == 1)
+    #     story = q.first()
+    #     if story is None:
+    #         example = Story()
+    #         example.text = 'Trial story of example admin user :)'
+    #         example.figures = '#example#'
+    #         example.author_id = 1
+    #         example.is_draft = True
+    #         print(example)
+    #         db.session.add(example)
+    #         db.session.commit()
+    #     q = db.session.query(Story).filter(Story.id == 2)
+    #     story = q.first()
+    #     if story is None:
+    #         example = Story()
+    #         example.text = 'Trial story of example admin user :)'
+    #         example.figures = '#story#'
+    #         example.author_id = 3
+    #         example.is_draft = False
+    #         print(example)
+    #         db.session.add(example)
+    #         db.session.commit()
+    #     q = db.session.query(Story).filter(Story.id == 3)
+    #     story = q.first()
+    #     if story is None:
+    #         example = Story()
+    #         example.text = 'Trial story of example admin user :)'
+    #         example.figures = '#trial#'
+    #         example.author_id = 3
+    #         example.is_draft = False
+    #         print(example)
+    #         db.session.add(example)
+    #         db.session.commit()
+    #     q = db.session.query(Story).filter(Story.id == 4)
+    #     story = q.first()
+    #     if story is None:
+    #         example = Story()
+    #         example.text = 'Trial story of example admin user :)'
+    #         example.figures = '#user#'
+    #         example.author_id = 3
+    #         example.is_draft = False
+    #         example.date = datetime.datetime.strptime('2019-10-20', '%Y-%m-%d')
+    #         print(example)
+    #         db.session.add(example)
+    #         db.session.commit()
 
 
     return flask_app
