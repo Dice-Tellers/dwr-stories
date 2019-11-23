@@ -29,7 +29,7 @@ def create_app(database=DEFAULT_DB, wtf=False, login_disabled=False):
     #     if story is None:
     #         example = Story()
     #         example.text = 'Trial story of example admin user :)'
-    #         example.figure = '#example#'
+    #         example.figures = '#example#'
     #         example.author_id = 1
     #         example.is_draft = True
     #         print(example)
@@ -40,7 +40,7 @@ def create_app(database=DEFAULT_DB, wtf=False, login_disabled=False):
     #     if story is None:
     #         example = Story()
     #         example.text = 'Trial story of example admin user :)'
-    #         example.figure = '#story#'
+    #         example.figures = '#story#'
     #         example.author_id = 2
     #         example.is_draft = False
     #         print(example)
