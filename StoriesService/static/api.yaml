@@ -16,7 +16,7 @@ paths:
         - application/json
       responses:
         '200':
-          description: Array of story as described in definitions
+          description: Array of stories as described in definitions
           schema:
             type: array
             items:
@@ -54,7 +54,7 @@ paths:
         '404':
           description: Specified story not found
         '200':
-          description: Object story descibed in definitions
+          description: Object story as in definitions
           schema:
             $ref: '#/definitions/story'
     put:
@@ -73,9 +73,13 @@ paths:
             $ref: '#/definitions/story_update'
       responses:
         '400':
-          description: Errors in requestbody
+          description: Errors in request body
+        '403':
+          description: Cannot update an already published story or other author's story
+        '422':
+          description: Story doesn't contain all the words or it is too long
         '200':
-          description: Draft updated
+          description: Draft updated or story published
 
     delete:
       summary: Delete the story specified by story id
