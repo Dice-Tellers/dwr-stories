@@ -15,7 +15,7 @@ from sqlalchemy import and_, func, desc
 from StoriesService.database import db, Story
 from StoriesService.urls import *
 
-YML = os.path.join(os.path.dirname(__file__), '..', 'static', 'api.yaml')
+YML = os.path.join(os.path.dirname(__file__), '.', 'stories-service-api.yaml')
 stories = SwaggerBlueprint('stories', '__name__', swagger_spec=YML)
 
 
