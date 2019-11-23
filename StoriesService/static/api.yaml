@@ -247,3 +247,6 @@ definitions:
       text:
         type: string
         description: Story text to submit
+      user_id:
+        type: integer
+        description: the author of the story
