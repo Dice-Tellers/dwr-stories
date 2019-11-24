@@ -1,19 +1,13 @@
 import datetime
-import itertools
 import os
-import re
 import string
-from builtins import hasattr
 from random import randint
 
-from flask import Blueprint, redirect, render_template, request, make_response, url_for, flash, jsonify, abort
+from flask import request, make_response, jsonify, abort
 from flakon import SwaggerBlueprint
-from flask import session
-from flask_login import (current_user, login_required)
 from sqlalchemy import and_, func, desc
 
 from StoriesService.database import db, Story
-from StoriesService.urls import *
 
 YML = os.path.join(os.path.dirname(__file__), '.', 'stories-service-api.yaml')
 stories = SwaggerBlueprint('stories', '__name__', swagger_spec=YML)
