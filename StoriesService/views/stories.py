@@ -52,6 +52,7 @@ def _stories():
 def _write_story(message='', status=200):
     if 'POST' == request.method:
         requestj = request.get_json(request)
+        print(requestj)
         try:
             new_story = Story()
             new_story.author_id = requestj['user_id']
@@ -73,7 +74,7 @@ def _write_story(message='', status=200):
             db.session.add(new_story)
             db.session.commit()
             status = 201
-            return make_response(message, status)
+            return jsonify(description=message), status
         # If values in request body aren't well-formed
         except (ValueError, KeyError):
             abort(400, 'Wrong parameters')
