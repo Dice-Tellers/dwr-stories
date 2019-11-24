@@ -256,8 +256,9 @@ class TestStories(flask_testing.TestCase):
         payload = {'text': 'my cat is drinking a beer with my neighbour\'s dog', 'figures': '#beer#cat#dog#',
                    'as_draft': False, 'user_id': '1'}
         response = self.client.post('/stories', data=json.dumps(payload), content_type='application/json')
+        body = json.loads(str(response.data, 'utf8'))
         self.assertStatus(response, 201)
-        self.assertEqual(response.data.decode('utf8'), 'New story has been published')
+        self.assertEqual(body['description'], 'New story has been published')
 
         # Testing writing of other user's draft
         payload = {'text': 'my cat is drinking a gin tonic with my neighbour\'s dog', 'as_draft': True, 'user_id': '2'}
@@ -277,8 +278,9 @@ class TestStories(flask_testing.TestCase):
         # Testing saving a new story as draft
         payload2 = {'text': 'my cat is drinking', 'figures': '#beer#cat#dog#', 'as_draft': True, 'user_id': '1'}
         response = self.client.post('/stories', data=json.dumps(payload2), content_type='application/json')
+        body = json.loads(str(response.data, 'utf8'))
         self.assertStatus(response, 201)
-        self.assertEqual(response.data.decode('utf8'), 'Draft created')
+        self.assertEqual(body['description'], 'Draft created')
 
         # Testing saving a draft again
         count = db.session.query(Story).count()
