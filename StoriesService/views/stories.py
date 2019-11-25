@@ -3,9 +3,9 @@ import os
 import string
 from random import randint
 
-from flask import request, make_response, jsonify, abort
 from flakon import SwaggerBlueprint
-from sqlalchemy import and_, func, desc
+from flask import request, make_response, jsonify, abort
+from sqlalchemy import func, desc
 
 from StoriesService.database import db, Story
 
@@ -88,7 +88,7 @@ def _open_story(id_story):
 def _user_story(id_user):
     q = db.session.query(Story).filter(Story.author_id == id_user, Story.is_draft == False).all()
     if q:
-        return jsonify(q[0].to_json())
+        return jsonify([story.to_json() for story in q])
     else:
         abort(404, 'Stories of specified user not found')
 
@@ -118,7 +118,7 @@ def _update_draft(id_story):
                 {'text': text, 'date': date, 'is_draft': draft})
             db.session.commit()
             status = 200
-            return make_response(message, status)
+            return jsonify(description=message), status
         except (ValueError, KeyError):
             abort(400, 'Errors in request body')
 
@@ -136,7 +136,7 @@ def _manage_stories(id_story):
         story_to_delete.delete()
         db.session.commit()
 
-    return make_response('Story has been deleted')
+    return jsonify(description='Story has been deleted')
 
 
 # Gets the last NON-draft story for each registered user
@@ -167,19 +167,21 @@ def _range():
             # Here .replace is needed because of solar/legal hour!
             # Stories are written at time X in db, and searched at time X-1
             end_date = datetime.datetime.utcnow().replace(hour=23, minute=59, second=59)
+
+        # If dates were valid, I still have to check if the request is a valid one
+        if begin_date > end_date:
+            abort(400, "Begin date cannot be higher than End date")
+
+        # Returns all the NON-draft stories that are between the requested dates
+        listed_stories = db.session.query(Story).filter(Story.date >= begin_date).filter(
+            Story.date <= end_date).filter(
+            Story.is_draft == False)
+
+        return jsonify([story.to_json() for story in listed_stories])
+
     # If a strptime fails getting the date, it means at least one of the parameters was invalid
     except ValueError:
         abort(400, "Wrong URL parameters")
-
-    # If dates were valid, I still have to check if the request is a valid one
-    if begin_date > end_date:
-        abort(400, "Begin date cannot be higher than End date")
-
-    # Returns all the NON-draft stories that are between the requested dates
-    listed_stories = db.session.query(Story).filter(Story.date >= begin_date).filter(Story.date <= end_date).filter(
-        Story.is_draft == False)
-
-    return jsonify([story.to_json() for story in listed_stories])
 
 
 # Get a random story written by other users in the last three days
