@@ -84,6 +84,15 @@ def _open_story(id_story):
         abort(404, 'Specified story not found')
 
 
+@stories.operation('getStoriesUser')
+def _user_story(id_user):
+    q = db.session.query(Story).filter(Story.author_id == id_user, Story.is_draft == False).all()
+    if q:
+        return jsonify(q[0].to_json())
+    else:
+        abort(404, 'Stories of specified story not found')
+
+
 @stories.operation('updateDraft')
 def _update_draft(id_story):
     if 'PUT' == request.method:

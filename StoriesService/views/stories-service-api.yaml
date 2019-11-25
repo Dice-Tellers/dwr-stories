@@ -100,7 +100,26 @@ paths:
           description: Request is invalid, check if you are the author of the story and the id is a valid one
         '200':
           description: Story has been deleted
-
+  /stories/users/{id_user}:
+    get:
+      summary: Return the story of specified user
+      operationId: getStoriesUser
+      parameters:
+        - in: path
+          name: id_user
+          required: true
+          type: integer
+      produces:
+        - application/json
+      responses:
+        '404':
+          description: Stories of specified story not found
+        '200':
+          description: Array of stories as described in definitions
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/story'
   /stories/latest:
     get:
       summary: Gets the last NON-draft story for each registered user
