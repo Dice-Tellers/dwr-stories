@@ -251,7 +251,7 @@ def _search():
         query = request.args.get('query')
 
         if query is None:
-            abort(400, 'Error with one parameters')
+            abort(400, 'Error with query parameter')
         else:
             query = query.strip()
 
@@ -266,4 +266,4 @@ def _search():
             return jsonify({}), 204 
     # If values in request body aren't well-formed
     except ValueError:
-        abort(400, 'Error with one parameters') 
+        abort(400, 'Error with query parameter') 
