@@ -113,7 +113,7 @@ class TestStories(flask_testing.TestCase):
         response = self.client.get('/stories/users/50')
         body = json.loads(str(response.data, 'utf8'))
         self.assertStatus(response, 404)
-        self.assertEqual(body['description'], 'Stories of specified story not found')
+        self.assertEqual(body['description'], 'Stories of specified user not found')
 
     # Testing that the oldest story per user is contained in the resulting stories
     def test_latest_story(self):

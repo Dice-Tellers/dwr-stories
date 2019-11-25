@@ -90,7 +90,7 @@ def _user_story(id_user):
     if q:
         return jsonify(q[0].to_json())
     else:
-        abort(404, 'Stories of specified story not found')
+        abort(404, 'Stories of specified user not found')
 
 
 @stories.operation('updateDraft')
