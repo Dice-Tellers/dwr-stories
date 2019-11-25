@@ -248,8 +248,10 @@ def _manage_stories(id_story):
 @stories.operation('search')
 def _search():
     try:
+        # Retrive parameter inserted in the search
         query = request.args.get('query')
 
+        # If it is None return Error, otherwise delete withespace in the string
         if query is None:
             abort(400, 'Error with query parameter')
         else:
@@ -257,9 +259,11 @@ def _search():
 
         stories = []
 
+         # Check if there are user with the specified name or surname
         if query != '':
             stories = Story.query.filter(and_(Story.figures.like('%#' + query + '#%'), Story.is_draft==False)).all()
 
+        # Return the result of the search
         if len(stories) > 0:    
             return jsonify([story.to_json() for story in stories])
         else:
