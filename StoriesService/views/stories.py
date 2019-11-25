@@ -127,7 +127,7 @@ def _update_draft(id_story):
 def _manage_stories(id_story):
     req = request.get_json(request)
     story_to_delete = Story.query.filter(Story.id == id_story)
-    if not req['user_id'] or not req['user_id'].isdigit() or story_to_delete.first().author_id != int(req['user_id']):
+    if not req['user_id'] or not type(req['user_id']) is int or story_to_delete.first().author_id != int(req['user_id']):
         abort(400, 'Request is invalid, check if you are the author of the story and the id is a valid one')
     else:
         # TODO : cancellare reactions and counters relativi
