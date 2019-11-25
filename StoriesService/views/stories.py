@@ -3,8 +3,9 @@ import os
 import string
 from random import randint
 
+import requests
 from flakon import SwaggerBlueprint
-from flask import request, make_response, jsonify, abort
+from flask import request, jsonify, abort
 from sqlalchemy import func, desc
 
 from StoriesService.database import db, Story
@@ -43,7 +44,7 @@ def _stories():
 
 
 @stories.operation('writeStory')
-def _write_story(message='', status=200):
+def _write_story(message=''):
     if 'POST' == request.method:
         requestj = request.get_json(request)
         print(requestj)
@@ -60,15 +61,15 @@ def _write_story(message='', status=200):
                 validity = check_validity(new_story.text, new_story.figures)
                 if validity is not None:
                     abort(422, validity)
-                else:
-                    # Response message for story creation
-                    message = 'New story has been published'
-                    # TODO: chiamare inizializzaione delle reactions
             # Insertion of a draft or a valid story in db
             db.session.add(new_story)
             db.session.commit()
-            status = 201
-            return jsonify(description=message), status
+            r = requests.post("http://127.0.0.1:5004/new", json={"story_id": new_story.id})
+            if r.status_code < 300:
+                return jsonify(description='New story has been published'), 201
+            else:
+                abort(500, "Error calling ReactionService")
+
         # If values in request body aren't well-formed
         except (ValueError, KeyError):
             abort(400, 'Wrong parameters')
@@ -127,16 +128,16 @@ def _update_draft(id_story):
 def _manage_stories(id_story):
     req = request.get_json(request)
     story_to_delete = Story.query.filter(Story.id == id_story)
-    if not req['user_id'] or not type(req['user_id']) is int or story_to_delete.first().author_id != int(req['user_id']):
+    if not req['user_id'] or not type(req['user_id']) is int or story_to_delete.first().author_id != req['user_id']:
         abort(400, 'Request is invalid, check if you are the author of the story and the id is a valid one')
     else:
-        # TODO : cancellare reactions and counters relativi
-        # Reaction.query.filter(Reaction.story_id == id_story).delete()
-        # Counter.query.filter(Counter.story_id == id_story).delete()
-        story_to_delete.delete()
-        db.session.commit()
-
-    return jsonify(description='Story has been deleted')
+        r = requests.delete("http://127.0.0.1:5004/delete", json={"story_id": id_story})
+        if r.status_code < 300:
+            story_to_delete.delete()
+            db.session.commit()
+            return jsonify(description='Story has been deleted')
+        else:
+            abort(500, "Error calling ReactionService")
 
 
 # Gets the last NON-draft story for each registered user
