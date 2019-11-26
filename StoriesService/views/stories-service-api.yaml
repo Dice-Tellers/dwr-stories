@@ -197,11 +197,14 @@ paths:
         '200':
           description: Array of drafts
           schema:
-            type: array
-            items:
-              $ref: '#/definitions/story'
-
-
+            $ref: '#/definitions/story_submit'
+      responses:
+        '400':
+          description: Errors in requestbody
+        '422':
+          description: Story doesn't contain all the words or it is too long
+        '201':
+          description: Draft created / Draft updated / Draft has been published / Story has been published
   /stories/stats/{user_id}:
     get:
       summary: Get the statistics for a specific user
@@ -219,7 +222,52 @@ paths:
           description: Errors in requestbody
         '200':
           description: Statistics of stories for a given user
-
+  /stories/delete/{id_story}:
+    post:
+      summary: Delete the story specified by story id
+      operationId: deleteStory
+      parameters:
+        - in: path
+          name: id_story
+          description: Id of story you want delete
+          required: true
+          type: integer
+        - in: query
+          name: user_id
+          description: Current user id
+          type: integer
+      responses:
+        '400':
+          description: Request is invalid, check if you are the author of the story and the id is a valid one
+        '200':
+          description: Story has been deleted
+  /search:
+    get:
+      summary: Return the list of all matching stories
+      operationId: search
+      parameters:
+        - in: query
+          name: query
+          required: True
+          description: The name of figures to search
+          type: string
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: A JSON array of JSON objects containing stories list
+          schema: 
+            type: array
+            items: 
+              $ref: '#/definitions/story'
+        '204':
+          description: An empty JSON array
+          schema: 
+            type: array
+            items: 
+              $ref: '#/definitions/story'
+        '400':
+          description: Error with query parameter
 definitions:
   story:
     type: object
@@ -269,3 +317,4 @@ definitions:
       user_id:
         type: integer
         description: the author of the story
+        
