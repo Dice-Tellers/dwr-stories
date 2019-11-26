@@ -367,6 +367,46 @@ class TestStories(flask_testing.TestCase):
     #     self.assertEqual(response.data.decode('utf8'),
     #                      'Story has been deleted')
 
+    def test_search_exist(self):
+        response = self.client.get('/search?query=nini')
+        body = json.loads(str(response.data, 'utf8'))
+        self.assertEqual(body, [
+            {'author_id': 3, 'date': 'Fri, 11 Nov 2011 00:00:00 GMT', 'figures': '#example#nini#', 'id': 5,
+             'is_draft': False, 'text': 'very old story (11 11 2011)'}])
+    
+    def test_search_double_exist(self):
+        response = self.client.get('/search?query=abc')
+        body = json.loads(str(response.data, 'utf8'))
+        self.assertEqual(body, [
+            {'author_id': 2, 'date': 'Thu, 10 Oct 2019 00:00:00 GMT', 'figures': '#example#abc#', 'id': 2,
+             'is_draft': False, 'text': 'Old story (dont see this in /latest)'},
+            {'author_id': 2, 'date': 'Sun, 13 Oct 2019 00:00:00 GMT', 'figures': '#example#abc#', 'id': 3,
+             'is_draft': False, 'text': 'You should see this one in /latest'}])
+
+    def test_search_not_exist(self):
+        response = self.client.get('/search?query=notexist')
+        self.assertStatus(response, 204)
+
+    def test_search_bad_request(self):
+        # NO parameter
+        response = self.client.get('/search?=notexist')
+        body = json.loads(str(response.data, 'utf8'))
+
+        self.assertStatus(response, 400)
+        self.assertEqual(body['description'],
+                         'Error with query parameter')
+
+        # Wrong parameter
+        response = self.client.get('/search?notquery=notexist')
+        body = json.loads(str(response.data, 'utf8'))
+
+        self.assertStatus(response, 400)
+        self.assertEqual(body['description'],
+                         'Error with query parameter')
+    
+    def test_search_empty_request(self):
+        response = self.client.get('/search?query=')        
+        self.assertStatus(response, 204)
 
 class TestRandomRecentStory(flask_testing.TestCase):
     app = None

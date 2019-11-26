@@ -250,3 +250,62 @@ def _stories_stats(user_id):
     }
 
     return jsonify(result)
+
+
+# @stories.route('/stories/delete/<int:id_story>', methods=['POST'])
+# @login_required
+# def _manage_stories(id_story):
+#     story_to_delete = Story.query.filter(Story.id == id_story)
+#     if story_to_delete.first().author_id != current_user.id:
+#         flash("Cannot delete other user's story", 'error')
+#     else:
+#
+#         Reaction.query.filter(Reaction.story_id == id_story).delete()
+#         Counter.query.filter(Counter.story_id == id_story).delete()
+#         story_to_delete.delete()
+#         db.session.commit()
+#
+#     return redirect(url_for("home.index"))
+
+@stories.operation('deleteStory')
+def _manage_stories(id_story):
+    user_id = request.args.get('user_id')
+    story_to_delete = Story.query.filter(Story.id == id_story)
+    if not user_id or not user_id.isdigit() or story_to_delete.first().author_id != int(user_id):
+        abort(400, 'Request is invalid, check if you are the author of the story and the id is a valid one')
+    else:
+        # TODO : cancellare reactions and counters relativi
+        # Reaction.query.filter(Reaction.story_id == id_story).delete()
+        # Counter.query.filter(Counter.story_id == id_story).delete()
+        story_to_delete.delete()
+        db.session.commit()
+
+    return make_response('Story has been deleted')
+
+# Return the result of the search in the story list
+@stories.operation('search')
+def _search():
+    try:
+        # Retrive parameter inserted in the search
+        query = request.args.get('query')
+
+        # If it is None return Error, otherwise delete withespace in the string
+        if query is None:
+            abort(400, 'Error with query parameter')
+        else:
+            query = query.strip()
+
+        stories = []
+
+         # Check if there are user with the specified name or surname
+        if query != '':
+            stories = Story.query.filter(and_(Story.figures.like('%#' + query + '#%'), Story.is_draft==False)).all()
+
+        # Return the result of the search
+        if len(stories) > 0:    
+            return jsonify([story.to_json() for story in stories])
+        else:
+            return jsonify({}), 204 
+    # If values in request body aren't well-formed
+    except ValueError:
+        abort(400, 'Error with query parameter') 

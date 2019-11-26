@@ -41,7 +41,7 @@ def create_app(database=DEFAULT_DB, wtf=False, login_disabled=False):
     #         example = Story()
     #         example.text = 'Trial story of example admin user :)'
     #         example.figures = '#story#'
-    #         example.author_id = 2
+    #         example.author_id = 3
     #         example.is_draft = False
     #         print(example)
     #         db.session.add(example)
