@@ -224,25 +224,7 @@ paths:
           description: Errors in requestbody
         '200':
           description: Statistics of stories for a given user
-  /stories/delete/{id_story}:
-    post:
-      summary: Delete the story specified by story id
-      operationId: deleteStory
-      parameters:
-        - in: path
-          name: id_story
-          description: Id of story you want delete
-          required: true
-          type: integer
-        - in: query
-          name: user_id
-          description: Current user id
-          type: integer
-      responses:
-        '400':
-          description: Request is invalid, check if you are the author of the story and the id is a valid one
-        '200':
-          description: Story has been deleted
+
   /search:
     get:
       summary: Return the list of all matching stories
