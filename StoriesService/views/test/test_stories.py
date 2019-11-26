@@ -103,6 +103,18 @@ class TestStories(flask_testing.TestCase):
         self.assertStatus(response, 404)
         self.assertEqual(body['description'], 'Specified story not found')
 
+    def test_stories_user(self):
+        response = self.client.get('/stories/users/1')
+        body = json.loads(str(response.data, 'utf8'))
+        print(body)
+        self.assertEqual(body, {'author_id': 1, 'date': 'Sun, 20 Oct 2019 00:00:00 GMT', 'figures': '#example#admin#', 'id': 1, 'is_draft': False, 'text': 'Trial story of example admin user :)'})
+
+    def test_non_existing_user(self):
+        response = self.client.get('/stories/users/50')
+        body = json.loads(str(response.data, 'utf8'))
+        self.assertStatus(response, 404)
+        self.assertEqual(body['description'], 'Stories of specified user not found')
+
     # Testing that the oldest story per user is contained in the resulting stories
     def test_latest_story(self):
         response = self.client.get('/stories/latest')
@@ -178,7 +190,29 @@ class TestStories(flask_testing.TestCase):
             {'author_id': 2, 'date': 'Sun, 13 Oct 2019 00:00:00 GMT', 'figures': '#example#abc#', 'id': 3,
              'is_draft': False, 'text': 'You should see this one in /latest'}]
                          )
-    
+
+    def test_drafts(self):
+        response = self.client.get('/stories/range?begin=2013-10-10')
+        body = json.loads(str(response.data, 'utf8'))
+        self.assertStatus(response, 200)
+        self.assertEqual(body, [
+            {'author_id': 1, 'date': 'Sun, 20 Oct 2019 00:00:00 GMT', 'figures': '#example#admin#', 'id': 1,
+             'is_draft': False, 'text': 'Trial story of example admin user :)'},
+            {'author_id': 2, 'date': 'Thu, 10 Oct 2019 00:00:00 GMT', 'figures': '#example#abc#', 'id': 2,
+             'is_draft': False, 'text': 'Old story (dont see this in /latest)'},
+            {'author_id': 2, 'date': 'Sun, 13 Oct 2019 00:00:00 GMT', 'figures': '#example#abc#', 'id': 3,
+             'is_draft': False, 'text': 'You should see this one in /latest'}])
+
+        # Testing range with only one parameter (end)
+        # Expected behaviour: it should return all the stories BEFORE the specified date
+        response = self.client.get('/stories/range?end=2013-10-10')
+        body = json.loads(str(response.data, 'utf8'))
+        print(body)
+        self.assertStatus(response, 200)
+        self.assertEqual(body, [
+            {'author_id': 3, 'date': 'Fri, 11 Nov 2011 00:00:00 GMT', 'figures': '#example#nini#', 'id': 5,
+             'is_draft': False, 'text': 'very old story (11 11 2011)'}])
+
     def test_statistics(self):
         # Test stories statistics
         # Expected behaviour: return 2 stories, 4 total dice and 2.0 avg dice
@@ -188,94 +222,124 @@ class TestStories(flask_testing.TestCase):
         self.assertStatus(response, 200)
         self.assertEqual(body, {'num_stories': 2, 'tot_num_dice': 4, 'avg_dice': 2.0})
 
-    def test_get_draft(self):
-        # Testing writing of a valid draft story
-        response = self.client.get('/stories/new/write/4?user_id=3')
+    def test_draft(self):
+        response = self.client.get('/stories/drafts?user_id=2')
+        body = json.loads(str(response.data, 'utf8'))
+        self.assertStatus(response, 404)
+        self.assertEqual(body['description'], 'There are no recent drafts by this user')
+
+        response = self.client.get('/stories/drafts?user_id=3')
+        body = json.loads(str(response.data, 'utf8'))
         self.assertStatus(response, 200)
-        self.assertEqual(response.data.decode('utf8'), 'Session  to continue writing a draft OK')
-
-        # Testing writing of other user's draft
-        response = self.client.get('/stories/new/write/4?user_id=2')
+        self.assertEqual(body, [
+            {"author_id": 3, "date": "Sun, 30 Dec 2018 00:00:00 GMT", "figures": "#example#nini#", "id": 4,
+             "is_draft": True, "text": "DRAFT from not admin"}]
+                         )
+        response = self.client.get('/stories/drafts?use_id=3')
         body = json.loads(str(response.data, 'utf8'))
         self.assertStatus(response, 400)
-        self.assertEqual(body['description'],
-                         'Request is invalid, check if you are the author of the story and it is still a draft')
-
-        # Testing writing of an already published story
-        response = self.client.get('/stories/new/write/3?user_id=3')
-        body = json.loads(str(response.data, 'utf8'))
-        self.assertStatus(response, 400)
-        self.assertEqual(body['description'],
-                         'Request is invalid, check if you are the author of the story and it is still a draft')
+        self.assertEqual(body['description'], 'Invalid parameters')
 
     def test_write_story(self):
         # Testing invalid request
-        payload = {'text': 'my cat is drinking a gin tonic with my neighbour\'s dog', 'as_draft': 'a', 'user': 'b'}
-        response = self.client.post('/stories/new/write', data=json.dumps(payload), content_type='application/json')
+        payload = {'text': 'my cat is drinking a gin tonic with my neighbour\'s dog', 'figures': '', 'as_draft': 'a',
+                   'user': 'b'}
+        response = self.client.post('/stories', data=json.dumps(payload), content_type='application/json')
         body = json.loads(str(response.data, 'utf8'))
         self.assertStatus(response, 400)
         self.assertEqual(body['description'], 'Wrong parameters')
 
         # Testing publishing invalid story
-        with self.client.session_transaction() as session:
-            session.clear()
-            session['figures'] = ['beer', 'cat', 'dog']
-        payload = {'text': 'my cat is drinking a gin tonic with my neighbour\'s dog', 'as_draft': False, 'user_id': '1'}
-        response = self.client.post('/stories/new/write', data=json.dumps(payload), content_type='application/json')
+        payload = {'text': 'my cat is drinking a gin tonic with my neighbour\'s dog', 'figures': '#beer#cat#dog#',
+                   'as_draft': False, 'user_id': '1'}
+        response = self.client.post('/stories', data=json.dumps(payload), content_type='application/json')
         body = json.loads(str(response.data, 'utf8'))
         self.assertStatus(response, 422)
         self.assertEqual(body['description'], 'Your story doesn\'t contain all the words. Missing: beer ')
 
+        payload = {'text': 'a' * 1001, 'figures': '#beer#cat#dog#',
+                   'as_draft': False, 'user_id': '1'}
+        response = self.client.post('/stories', data=json.dumps(payload), content_type='application/json')
+        body = json.loads(str(response.data, 'utf8'))
+        self.assertStatus(response, 422)
+        self.assertEqual(body['description'], 'Story is too long')
+
         # Testing publishing valid story
-        payload = {'text': 'my cat is drinking a beer with my neighbour\'s dog', 'as_draft': False, 'user_id': '1'}
-        response = self.client.post('/stories/new/write', data=json.dumps(payload), content_type='application/json')
+        payload = {'text': 'my cat is drinking a beer with my neighbour\'s dog', 'figures': '#beer#cat#dog#',
+                   'as_draft': False, 'user_id': '1'}
+        response = self.client.post('/stories', data=json.dumps(payload), content_type='application/json')
+        body = json.loads(str(response.data, 'utf8'))
         self.assertStatus(response, 201)
-        self.assertEqual(response.data.decode('utf8'), 'New story has been published')
+        self.assertEqual(body['description'], 'New story has been published')
+
+        # Testing writing of other user's draft
+        payload = {'text': 'my cat is drinking a gin tonic with my neighbour\'s dog', 'as_draft': True, 'user_id': '2'}
+        response = self.client.put('/stories/4', data=json.dumps(payload), content_type='application/json')
+        body = json.loads(str(response.data, 'utf8'))
+        self.assertStatus(response, 403)
+        self.assertEqual(body['description'],
+                         'Request is invalid, check if you are the author of the story and it is still a draft')
+
+        # Testing writing of an already published story
+        response = self.client.put('/stories/4', data=json.dumps(payload), content_type='application/json')
+        body = json.loads(str(response.data, 'utf8'))
+        self.assertStatus(response, 403)
+        self.assertEqual(body['description'],
+                         'Request is invalid, check if you are the author of the story and it is still a draft')
 
         # Testing saving a new story as draft
-        with self.client.session_transaction() as session:
-            session.clear()
-            session['figures'] = ['beer', 'cat', 'dog']
-        payload2 = {'text': 'my cat is drinking', 'as_draft': True, 'user_id': '1'}
-        response = self.client.post('/stories/new/write', data=json.dumps(payload2), content_type='application/json')
+        payload2 = {'text': 'my cat is drinking', 'figures': '#beer#cat#dog#', 'as_draft': True, 'user_id': '1'}
+        response = self.client.post('/stories', data=json.dumps(payload2), content_type='application/json')
+        body = json.loads(str(response.data, 'utf8'))
         self.assertStatus(response, 201)
-        self.assertEqual(response.data.decode('utf8'), 'Draft created')
+        self.assertEqual(body['description'], 'Draft created')
 
         # Testing saving a draft again
         count = db.session.query(Story).count()
-        with self.client.session_transaction() as session:
-            session['figures'] = ['beer', 'cat', 'dog']
-            session['id_story'] = 6
-        response = self.client.post('/stories/new/write', data=json.dumps(payload2), content_type='application/json')
+        response = self.client.put('/stories/7', data=json.dumps(payload2), content_type='application/json')
         self.assertStatus(response, 200)
         self.assertEqual(response.data.decode('utf8'), 'Draft updated')
         # No items added
         q = db.session.query(Story).filter(Story.id == count + 1).first()
         self.assertEqual(q, None)
 
+        # Testing publishing an invalid draft story
+        payload3 = {'text': 'my cat is drinking and beer', 'as_draft': False, 'user_id': '1'}
+        response = self.client.put('/stories/7', data=json.dumps(payload3), content_type='application/json')
+        body = json.loads(str(response.data, 'utf8'))
+        self.assertStatus(response, 422)
+        self.assertEqual(body['description'], 'Your story doesn\'t contain all the words. Missing: dog ')
+
         # Testing publishing a draft story
-        with self.client.session_transaction() as session:
-            session['figures'] = ['beer', 'cat', 'dog']
-            session['id_story'] = 6
+        count = db.session.query(Story).count()
         payload3 = {'text': 'my cat is drinking dog and beer', 'as_draft': False, 'user_id': '1'}
-        response = self.client.post('/stories/new/write', data=json.dumps(payload3), content_type='application/json')
-        self.assertStatus(response, 201)
-        self.assertEqual(response.data.decode('utf8'), 'Draft has been published')
+        response = self.client.put('/stories/7', data=json.dumps(payload3), content_type='application/json')
+        self.assertStatus(response, 200)
+        self.assertEqual(response.data.decode('utf8'), 'Story published')
         q = db.session.query(Story).filter(Story.id == count + 1).first()
         self.assertEqual(q, None)
         q = db.session.query(Story).filter(Story.id == 6).first()
         self.assertEqual(q.is_draft, False)
 
+        # Errors in request body
+        payload3 = {'tet': 'my cat is drinking dog and beer', 'as_draft': False, 'user_id': '1'}
+        response = self.client.put('/stories/7', data=json.dumps(payload3), content_type='application/json')
+        body = json.loads(str(response.data, 'utf8'))
+        self.assertStatus(response, 400)
+        self.assertEqual(body['description'], 'Errors in request body')
+
     def test_delete_story(self):
         # Deleting the story of another user
-        response = self.client.post('/stories/delete/1?user_id=2')
+        payload4 = {'user_id': '2'}
+        response = self.client.delete('/stories/1', data=json.dumps(payload4), content_type='application/json')
         body = json.loads(str(response.data, 'utf8'))
         self.assertStatus(response, 400)
         self.assertEqual(body['description'],
                          'Request is invalid, check if you are the author of the story and the id is a valid one')
 
         # Deleting your story
-        response = self.client.post('/stories/delete/1?user_id=1')
+        payload4 = {'user_id': '1'}
+        response = self.client.delete('/stories/1', data=json.dumps(payload4), content_type='application/json')
         self.assertStatus(response, 200)
         self.assertEqual(response.data.decode('utf8'),
                          'Story has been deleted')

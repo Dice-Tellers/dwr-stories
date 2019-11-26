@@ -16,11 +16,29 @@ paths:
         - application/json
       responses:
         '200':
-          description: Array of story as described in definitions
+          description: Array of stories as described in definitions
           schema:
             type: array
             items:
               $ref: '#/definitions/story'
+    post:
+      summary: Submit a story or a draft
+      operationId: writeStory
+      consumes:
+        - application/json
+      parameters:
+        - in: body
+          name: story_submit
+          schema:
+            $ref: '#/definitions/story_submit'
+      responses:
+        '400':
+          description: Errors in requestbody
+        '422':
+          description: Story doesn't contain all the words or it is too long
+        '201':
+          description: Draft created / Draft updated / Draft has been published / Story has been published
+
   /stories/{id_story}:
     get:
       summary: Return the story specified by id_story
@@ -36,9 +54,72 @@ paths:
         '404':
           description: Specified story not found
         '200':
-          description: Object story descibed in definitions
+          description: Object story as in definitions
           schema:
             $ref: '#/definitions/story'
+    put:
+      summary: Update a draft
+      operationId: updateDraft
+      consumes:
+        - application/json
+      parameters:
+        - in: path
+          name: id_story
+          required: true
+          type: integer
+        - in: body
+          name: story_submit
+          schema:
+            $ref: '#/definitions/story_update'
+      responses:
+        '400':
+          description: Errors in request body
+        '403':
+          description: Cannot update an already published story or other author's story
+        '422':
+          description: Story doesn't contain all the words or it is too long
+        '200':
+          description: Draft updated or story published
+
+    delete:
+      summary: Delete the story specified by story id
+      operationId: deleteStory
+      parameters:
+        - in: path
+          name: id_story
+          description: Id of story you want delete
+          required: true
+          type: integer
+        - in: body
+          name: user_id
+          description: Current user id
+          schema:
+            type: integer
+      responses:
+        '400':
+          description: Request is invalid, check if you are the author of the story and the id is a valid one
+        '200':
+          description: Story has been deleted
+  /stories/users/{id_user}:
+    get:
+      summary: Return the story of specified user
+      operationId: getStoriesUser
+      parameters:
+        - in: path
+          name: id_user
+          required: true
+          type: integer
+      produces:
+        - application/json
+      responses:
+        '404':
+          description: Stories of specified story not found
+        '200':
+          description: Array of stories as described in definitions
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/story'
   /stories/latest:
     get:
       summary: Gets the last NON-draft story for each registered user
@@ -52,6 +133,7 @@ paths:
             type: array
             items:
               $ref: '#/definitions/story'
+
   /stories/range:
     get:
       summary: Searches for stories that were made in a specific range of time
@@ -76,6 +158,7 @@ paths:
             type: array
             items:
               $ref: '#/definitions/story'
+
   /stories/random:
     get:
       summary: Get a random story written by other users in the last three days
@@ -94,35 +177,27 @@ paths:
           description: Object story descibed in definitions
           schema:
             $ref: '#/definitions/story'
-  /stories/new/write/{id_story}:
+
+  /stories/drafts:
     get:
-      summary: Set the session to contine a draft
-      operationId: writeDraft
+      summary: Returns a list of all the drafts
+      operationId: getDrafts
       parameters:
-        - in: path
-          name: id_story
-          description: id of draft you want continue
-          required: true
-          type: integer
         - in: query
           name: user_id
           description: Current user id
           type: integer
+      produces:
+        - application/json
       responses:
         '400':
-          description: Request is invalid, check if you are the author of the story and it is still a draft
+          description: Invalid parameters
+        '404':
+          description: There are no recent drafts by this user
         '200':
-          description: Session  to continue writing a draft OK
-  /stories/new/write:
-    post:
-      summary: Submit a story or a draft
-      operationId: writeStory
-      consumes:
-        - application/json
-      parameters:
-        - in: body
-          name: story_submit
+          description: Array of drafts
           schema:
+<<<<<<< HEAD:StoriesService/static/api.yaml
             $ref: '#/definitions/story_submit'
       responses:
         '400':
@@ -131,6 +206,13 @@ paths:
           description: Story doesn't contain all the words or it is too long
         '201':
           description: Draft created / Draft updated / Draft has been published / Story has been published
+=======
+            type: array
+            items:
+              $ref: '#/definitions/story'
+
+
+>>>>>>> e3945496b371b9cd33697825883b73db1547fb8d:StoriesService/views/stories-service-api.yaml
   /stories/stats/{user_id}:
     get:
       summary: Get the statistics for a specific user
@@ -148,6 +230,7 @@ paths:
           description: Errors in requestbody
         '200':
           description: Statistics of stories for a given user
+<<<<<<< HEAD:StoriesService/static/api.yaml
   /stories/delete/{id_story}:
     post:
       summary: Delete the story specified by story id
@@ -194,6 +277,9 @@ paths:
               $ref: '#/definitions/story'
         '400':
           description: Error with query parameter
+=======
+
+>>>>>>> e3945496b371b9cd33697825883b73db1547fb8d:StoriesService/views/stories-service-api.yaml
 definitions:
   story:
     type: object
@@ -219,12 +305,27 @@ definitions:
   story_submit:
     type: object
     properties:
-      text:
-        type: string
-        description: Story text to submit
       as_draft:
         type: boolean
         description: True to save a draft, false otherwise
+      figures:
+        type: string
+        description: Mandatory words in the story #f1#f2#f3#f4#
+      text:
+        type: string
+        description: Story text to submit
+      user_id:
+        type: integer
+        description: the author of the story
+  story_update:
+    type: object
+    properties:
+      as_draft:
+        type: boolean
+        description: True to save a draft, false otherwise
+      text:
+        type: string
+        description: Story text to submit
       user_id:
         type: integer
         description: the author of the story
