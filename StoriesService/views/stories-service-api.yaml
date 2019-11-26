@@ -197,7 +197,6 @@ paths:
         '200':
           description: Array of drafts
           schema:
-<<<<<<< HEAD:StoriesService/static/api.yaml
             $ref: '#/definitions/story_submit'
       responses:
         '400':
@@ -206,13 +205,6 @@ paths:
           description: Story doesn't contain all the words or it is too long
         '201':
           description: Draft created / Draft updated / Draft has been published / Story has been published
-=======
-            type: array
-            items:
-              $ref: '#/definitions/story'
-
-
->>>>>>> e3945496b371b9cd33697825883b73db1547fb8d:StoriesService/views/stories-service-api.yaml
   /stories/stats/{user_id}:
     get:
       summary: Get the statistics for a specific user
@@ -230,7 +222,6 @@ paths:
           description: Errors in requestbody
         '200':
           description: Statistics of stories for a given user
-<<<<<<< HEAD:StoriesService/static/api.yaml
   /stories/delete/{id_story}:
     post:
       summary: Delete the story specified by story id
@@ -277,9 +268,6 @@ paths:
               $ref: '#/definitions/story'
         '400':
           description: Error with query parameter
-=======
-
->>>>>>> e3945496b371b9cd33697825883b73db1547fb8d:StoriesService/views/stories-service-api.yaml
 definitions:
   story:
     type: object

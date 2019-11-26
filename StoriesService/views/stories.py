@@ -242,7 +242,6 @@ def _stories_stats(user_id):
     }
 
     return jsonify(result)
-<<<<<<< HEAD
 
 
 # @stories.route('/stories/delete/<int:id_story>', methods=['POST'])
@@ -302,5 +301,3 @@ def _search():
     # If values in request body aren't well-formed
     except ValueError:
         abort(400, 'Error with query parameter') 
-=======
->>>>>>> e3945496b371b9cd33697825883b73db1547fb8d
