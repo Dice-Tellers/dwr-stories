@@ -12,31 +12,36 @@ import requests
 class MockServerRequestHandler(BaseHTTPRequestHandler):
     NEW_PATTERN = re.compile(r'^/(new|delete)$')
 
+    # Status response code
+    _status_code = requests.codes.ok
+    # Body response JSON
+    _body_response = json.dumps([])
+
     def do_POST(self):
         if re.search(self.NEW_PATTERN, self.path):
             # Add response status code.
-            self.send_response(requests.codes.ok)
+            self.send_response(self._status_code)
 
             # Add response headers.
             self.send_header('Content-Type', 'application/json; charset=utf-8')
             self.end_headers()
 
             # Add response content.
-            response_content = json.dumps([])
+            response_content = self._body_response
             self.wfile.write(response_content.encode('utf-8'))
             return
 
     def do_DELETE(self):
         if re.search(self.NEW_PATTERN, self.path):
             # Add response status code.
-            self.send_response(requests.codes.ok)
+            self.send_response(self._status_code)
 
             # Add response headers.
             self.send_header('Content-Type', 'application/json; charset=utf-8')
             self.end_headers()
 
             # Add response content.
-            response_content = json.dumps([])
+            response_content = self._body_response
             self.wfile.write(response_content.encode('utf-8'))
             return
 

@@ -50,7 +50,6 @@ def _stories():
 def _write_story(message=''):
     if 'POST' == request.method:
         requestj = request.get_json(request)
-        print(requestj)
         try:
             new_story = Story()
             new_story.author_id = requestj['user_id']
@@ -136,10 +135,12 @@ def _update_draft(id_story):
 def _manage_stories(id_story):
     req = request.get_json(request)
     story_to_delete = Story.query.filter(Story.id == id_story)
+    print(not req['user_id'] or not type(req['user_id']) is int or story_to_delete.first().author_id != req['user_id'])
     if not req['user_id'] or not type(req['user_id']) is int or story_to_delete.first().author_id != req['user_id']:
         abort(400, 'Request is invalid, check if you are the author of the story and the id is a valid one')
     else:
         r = requests.delete(DELETE_REACTIONS_URL, json={"story_id": id_story})
+        print(r)
         if r.status_code < 300:
             story_to_delete.delete()
             db.session.commit()
@@ -219,7 +220,6 @@ def _user_drafts():
     user_id = request.args.get('user_id')
     if user_id and user_id.isdigit:
         drafts = Story.query.filter_by(author_id=int(user_id), is_draft=True).all()
-        print(drafts)
         if len(drafts) == 0:
             abort(404, 'There are no recent drafts by this user')
         else:
@@ -255,27 +255,24 @@ def _stories_stats(user_id):
 # Return the result of the search in the story list
 @stories.operation('search')
 def _search():
-    try:
-        # Retrive parameter inserted in the search
-        query = request.args.get('query')
+    # Retrive parameter inserted in the search
+    query = request.args.get('query')
 
-        # If it is None return Error, otherwise delete withespace in the string
-        if query is None:
-            abort(400, 'Error with query parameter')
-        else:
-            query = query.strip()
+    # If it is None return Error, otherwise delete withespace in the string
+    if query is None:
+        abort(400, 'Error with query parameter')
+    else:
+        query = query.strip()
 
-        stories = []
+    stories = []
 
-         # Check if there are user with the specified name or surname
-        if query != '':
-            stories = Story.query.filter(and_(Story.figures.like('%#' + query + '#%'), Story.is_draft==False)).all()
+     # Check if there are user with the specified name or surname
+    if query != '':
+        stories = Story.query.filter(and_(Story.figures.like('%#' + query + '#%'), Story.is_draft==False)).all()
 
-        # Return the result of the search
-        if len(stories) > 0:    
-            return jsonify([story.to_json() for story in stories])
-        else:
-            return jsonify({}), 204 
-    # If values in request body aren't well-formed
-    except ValueError:
-        abort(400, 'Error with query parameter') 
+    # Return the result of the search
+    if len(stories) > 0:
+        return jsonify([story.to_json() for story in stories])
+    else:
+        return jsonify({}), 204
+

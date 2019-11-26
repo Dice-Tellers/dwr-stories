@@ -109,7 +109,6 @@ class TestStories(flask_testing.TestCase):
     def test_stories_user(self):
         response = self.client.get('/stories/users/1')
         body = json.loads(str(response.data, 'utf8'))
-        print(body)
         self.assertEqual(body, [{'author_id': 1, 'date': 'Sun, 20 Oct 2019 00:00:00 GMT', 'figures': '#example#admin#',
                                 'id': 1, 'is_draft': False, 'text': 'Trial story of example admin user :)'}])
 
@@ -185,7 +184,6 @@ class TestStories(flask_testing.TestCase):
         # Expected behaviour: return all the stories between the specified dates
         response = self.client.get('/stories/range?begin=2012-10-15&end=2020-10-10')
         body = json.loads(str(response.data, 'utf8'))
-        print(body)
         self.assertEqual(body, [
             {'author_id': 1, 'date': 'Sun, 20 Oct 2019 00:00:00 GMT', 'figures': '#example#admin#', 'id': 1,
              'is_draft': False, 'text': 'Trial story of example admin user :)'},
@@ -211,7 +209,6 @@ class TestStories(flask_testing.TestCase):
         # Expected behaviour: it should return all the stories BEFORE the specified date
         response = self.client.get('/stories/range?end=2013-10-10')
         body = json.loads(str(response.data, 'utf8'))
-        print(body)
         self.assertStatus(response, 200)
         self.assertEqual(body, [
             {'author_id': 3, 'date': 'Fri, 11 Nov 2011 00:00:00 GMT', 'figures': '#example#nini#', 'id': 5,
@@ -244,14 +241,14 @@ class TestStories(flask_testing.TestCase):
         self.assertStatus(response, 400)
         self.assertEqual(body['description'], 'Invalid parameters')
 
-    # Testing publishing valid story
     @classmethod
     def setup_class(cls):
         cls.mock_server_port = 5004
-        start_mock_server(cls.mock_server_port)
+        cls.mock_server = start_mock_server(cls.mock_server_port)
 
     def test_write_story(self):
         mock_users_url = 'http://localhost:{port}/new'.format(port=self.mock_server_port)
+        # Testing publishing valid story
         with patch.dict('StoriesService.views.stories.__dict__', {'NEW_REACTIONS_URL': mock_users_url}):
             payload = {'text': 'my cat is drinking a beer with my neighbour\'s dog', 'figures': '#beer#cat#dog#',
                        'as_draft': False, 'user_id': '1'}
@@ -284,14 +281,6 @@ class TestStories(flask_testing.TestCase):
         self.assertStatus(response, 422)
         self.assertEqual(body['description'], 'Story is too long')
 
-        # with patch.dict('StoriesService.views.stories.__dict__', {'NEW_REACTIONS_URL': mock_users_url}):
-        #     payload = {'text': 'my cat is drinking a beer with my neighbour\'s dog', 'figures': '#beer#cat#dog#',
-        #                'as_draft': False, 'user_id': '1'}
-        #     response = self.client.post('/stories', data=json.dumps(payload), content_type='application/json')
-        # body = json.loads(str(response.data, 'utf8'))
-        # self.assertStatus(response, 201)
-        # self.assertEqual(body['description'], 'New story has been published')
-        #
         # Testing writing of other user's draft
         payload = {'text': 'my cat is drinking a gin tonic with my neighbour\'s dog', 'as_draft': True,
                    'user_id': '2'}
@@ -309,7 +298,7 @@ class TestStories(flask_testing.TestCase):
                          'Request is invalid, check if you are the author of the story and it is still a draft')
 
         # Testing saving a new story as draft
-        payload2 = {'text': 'my cat is drinking', 'figures': '#beer#cat#dog#', 'as_draft': True, 'user_id': '1'}
+        payload2 = {'text': 'my cat is drinking', 'figures': '#beer#cat#dog#', 'as_draft': True, 'user_id': 1}
         response = self.client.post('/stories', data=json.dumps(payload2), content_type='application/json')
         body = json.loads(str(response.data, 'utf8'))
         self.assertStatus(response, 201)
@@ -351,21 +340,25 @@ class TestStories(flask_testing.TestCase):
         self.assertStatus(response, 400)
         self.assertEqual(body['description'], 'Errors in request body')
 
-    # def test_delete_story(self):
-    #     # Deleting the story of another user
-    #     payload4 = {'user_id': '2'}
-    #     response = self.client.delete('/stories/1', data=json.dumps(payload4), content_type='application/json')
-    #     body = json.loads(str(response.data, 'utf8'))
-    #     self.assertStatus(response, 400)
-    #     self.assertEqual(body['description'],
-    #                      'Request is invalid, check if you are the author of the story and the id is a valid one')
-    #
-    #     # Deleting your story
-    #     payload4 = {'user_id': '1'}
-    #     response = self.client.delete('/stories/1', data=json.dumps(payload4), content_type='application/json')
-    #     self.assertStatus(response, 200)
-    #     self.assertEqual(response.data.decode('utf8'),
-    #                      'Story has been deleted')
+    def test_delete_story(self):
+        # Deleting the story of another user
+        payload4 = {'user_id': 2}
+        response = self.client.delete('/stories/1', data=json.dumps(payload4), content_type='application/json')
+        body = json.loads(str(response.data, 'utf8'))
+        self.assertStatus(response, 400)
+        self.assertEqual(body['description'],
+                         'Request is invalid, check if you are the author of the story and the id is a valid one')
+
+        # Deleting your story
+        mock_users_url = 'http://localhost:{port}/delete'.format(port=self.mock_server_port)
+        #Testing deleting valid story
+        with patch.dict('StoriesService.views.stories.__dict__', {'DELETE_REACTIONS_URL': mock_users_url}):
+            payload4 = {'user_id': 1}
+            response = self.client.delete('/stories/1', data=json.dumps(payload4), content_type='application/json')
+        body = json.loads(str(response.data, 'utf8'))
+        self.assertStatus(response, 200)
+        self.assertEqual(body['description'],
+                         'Story has been deleted')
 
     def test_search_exist(self):
         response = self.client.get('/search?query=nini')

@@ -200,13 +200,6 @@ paths:
           description: Array of drafts
           schema:
             $ref: '#/definitions/story_submit'
-      responses:
-        '400':
-          description: Errors in requestbody
-        '422':
-          description: Story doesn't contain all the words or it is too long
-        '201':
-          description: Draft created / Draft updated / Draft has been published / Story has been published
   /stories/stats/{user_id}:
     get:
       summary: Get the statistics for a specific user
