@@ -72,6 +72,8 @@ paths:
           schema:
             $ref: '#/definitions/story_update'
       responses:
+        '500':
+          description: Error calling ReactionService
         '400':
           description: Errors in request body
         '403':

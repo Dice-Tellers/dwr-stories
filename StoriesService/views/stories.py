@@ -13,6 +13,9 @@ from StoriesService.database import db, Story
 YML = os.path.join(os.path.dirname(__file__), '.', 'stories-service-api.yaml')
 stories = SwaggerBlueprint('stories', '__name__', swagger_spec=YML)
 
+NEW_REACTIONS_URL = "http://127.0.0.1:5004/new"
+DELETE_REACTIONS_URL = "http://127.0.0.1:5004/delete"
+
 
 # Check validity of a text
 def check_validity(text, figures):
@@ -61,15 +64,15 @@ def _write_story(message=''):
                 validity = check_validity(new_story.text, new_story.figures)
                 if validity is not None:
                     abort(422, validity)
+                r = requests.post(NEW_REACTIONS_URL, json={"story_id": new_story.id})
+                if r.status_code < 300:
+                    message = 'New story has been published'
+                else:
+                    abort(500, "Error calling ReactionService")
             # Insertion of a draft or a valid story in db
             db.session.add(new_story)
             db.session.commit()
-            r = requests.post("http://127.0.0.1:5004/new", json={"story_id": new_story.id})
-            if r.status_code < 300:
-                return jsonify(description='New story has been published'), 201
-            else:
-                abort(500, "Error calling ReactionService")
-
+            return jsonify(description=message), 201
         # If values in request body aren't well-formed
         except (ValueError, KeyError):
             abort(400, 'Wrong parameters')
@@ -111,7 +114,12 @@ def _update_draft(id_story):
                 validity = check_validity(text, q[0].figures)
                 if validity is not None:
                     abort(422, validity)
-                message = 'Story published'
+                r = requests.post(NEW_REACTIONS_URL, json={"story_id": id_story})
+                if r.status_code < 300:
+                    message = 'Story published'
+                else:
+                    abort(500, "Error calling ReactionService")
+
             # Update a draft
             date_format = "%Y %m %d %H:%M"
             date = datetime.datetime.strptime(datetime.datetime.now().strftime(date_format), date_format)
@@ -131,7 +139,7 @@ def _manage_stories(id_story):
     if not req['user_id'] or not type(req['user_id']) is int or story_to_delete.first().author_id != req['user_id']:
         abort(400, 'Request is invalid, check if you are the author of the story and the id is a valid one')
     else:
-        r = requests.delete("http://127.0.0.1:5004/delete", json={"story_id": id_story})
+        r = requests.delete(DELETE_REACTIONS_URL, json={"story_id": id_story})
         if r.status_code < 300:
             story_to_delete.delete()
             db.session.commit()
