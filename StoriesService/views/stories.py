@@ -66,10 +66,10 @@ def _write_story(message=''):
                 validity = check_validity(new_story.text, new_story.figures)
                 if validity is not None:
                     abort(422, validity)
+                db.session.add(new_story)
+                db.session.commit()
                 r = requests.post(NEW_REACTIONS_URL, json={"story_id": new_story.id})
                 if r.status_code < 300:
-                    db.session.add(new_story)
-                    db.session.commit()
                     message = 'New story has been published'
                 else:
                     abort(500, "Error calling ReactionService")
