@@ -2,6 +2,7 @@
 
 omit =
     *__init__.py*
+    *mock.py*
 
 include =
     */StoriesService/*
