@@ -58,6 +58,9 @@ def _write_story(message=''):
             new_story.text = requestj['text']
             if new_story.is_draft:
                 # Response message for draft creation
+                # Insertion of a draft or a valid story in db
+                db.session.add(new_story)
+                db.session.commit()
                 message = 'Draft created'
             else:
                 validity = check_validity(new_story.text, new_story.figures)
@@ -65,12 +68,12 @@ def _write_story(message=''):
                     abort(422, validity)
                 r = requests.post(NEW_REACTIONS_URL, json={"story_id": new_story.id})
                 if r.status_code < 300:
+                    db.session.add(new_story)
+                    db.session.commit()
                     message = 'New story has been published'
                 else:
                     abort(500, "Error calling ReactionService")
-            # Insertion of a draft or a valid story in db
-            db.session.add(new_story)
-            db.session.commit()
+
             return jsonify(description=message), 201
         # If values in request body aren't well-formed
         except (ValueError, KeyError):
