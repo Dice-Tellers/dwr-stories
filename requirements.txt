@@ -26,7 +26,7 @@ packaging==19.2
 patch==1.16
 pip-tools==4.2.0
 pluggy==0.13.0
-py==1.8.0
+py==1.10.0
 pyparsing==2.4.2
 pytest==5.2.2
 pytest-cov==2.8.1
