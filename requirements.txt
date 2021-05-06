@@ -9,7 +9,7 @@ coverage==4.5.4
 filelock==3.0.12
 Flask==1.1.1
 Flask-Caching==1.7.2
-Flask-Cors==3.0.8
+Flask-Cors==3.0.9
 Flask-Login==0.4.1
 Flask-Session==0.3.1
 Flask-SQLAlchemy==2.4.1
